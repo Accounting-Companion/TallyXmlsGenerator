@@ -15,6 +15,13 @@ public class Auth
 
 public class Body
 {
+    public Body(string xML)
+    {
+        Mode = "raw";
+        Raw = xML;
+        Options = new() { Raw = new() { Language = "xml" } };
+    }
+
     [JsonPropertyName("mode")]
     public string Mode { get; set; }
 
@@ -87,6 +94,16 @@ public class Info
 
 public class Item
 {
+    public Item(string name)
+    {
+        Name = name;
+    }
+    public Item(string name, string XML, string Description)
+    {
+        Name = name;
+        Request = new(XML, Description);
+    }
+
     [JsonPropertyName("name")]
     public string Name { get; set; }
 
@@ -97,13 +114,16 @@ public class Item
     public ProtocolProfileBehavior ProtocolProfileBehavior { get; set; }
 
     [JsonPropertyName("request")]
-    public Request Request { get; set; }
+    public Request Request { get; set; } 
 
     [JsonPropertyName("response")]
-    public List<object> Response { get; set; }
+    public List<string> Response { get; set; } 
 
     [JsonPropertyName("event")]
-    public List<Event> Event { get; set; }
+    public List<Event> Event { get; set; } 
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; }
 }
 
 public class Options
@@ -129,6 +149,18 @@ public class Raw
 
 public class Request
 {
+    public Request()
+    {
+    }
+
+    public Request(string XML, string description)
+    {
+        Method = "POST";
+        Body = new(XML);
+        Url = new();
+        Description = description;
+    }
+
     [JsonPropertyName("method")]
     public string Method { get; set; }
 
@@ -150,7 +182,7 @@ public class Request
 
 public class PostManCollection
 {
-    public PostManCollection(string id,string name,string description,string schema,string exporter_id)
+    public PostManCollection(string id, string name, string description, string schema, string exporter_id)
     {
         Info = new(id, name, description, schema, exporter_id);
     }
@@ -162,7 +194,7 @@ public class PostManCollection
     public List<Item> Item { get; set; }
 
     [JsonPropertyName("event")]
-    public List<Event> Event { get; set; }
+    public List<Event> Event { get; set; } = new();
 
     [JsonPropertyName("variable")]
     public List<Variable> Variable { get; set; }
@@ -179,11 +211,18 @@ public class Script
 
 public class Url
 {
+    public Url()
+    {
+        Raw = "{{TallyURL}}:{{TallyPort}}";
+        Host = "{{TallyURL}}";
+        Port = "{{TallyPort}}";
+    }
+
     [JsonPropertyName("raw")]
     public string Raw { get; set; }
 
     [JsonPropertyName("host")]
-    public List<string> Host { get; set; }
+    public string Host { get; set; }
 
     [JsonPropertyName("port")]
     public string Port { get; set; }
@@ -202,6 +241,18 @@ public class Variable
 
     [JsonPropertyName("value")]
     public string Value { get; set; }
+}
+
+
+public class CollectionRoot
+{
+    public CollectionRoot(PostManCollection collection)
+    {
+        Collection = collection;
+    }
+
+    [JsonPropertyName("collection")]
+    public PostManCollection Collection { get; set; }
 }
 
 

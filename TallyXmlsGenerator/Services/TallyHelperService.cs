@@ -10,6 +10,19 @@ public class TallyHelperService : TallyService
         return GetTDLReportXML<LicenseInfo, LicenseInfo>();
     }
 
+
+    public string GetActiveCompanyXml()
+    {
+        PaginatedRequestOptions? paginatedRequestOptions = new()
+        {
+            FetchList = new() { "NAME", "GUID", "BOOKSFROM", "STARTINGFROM", "COMPANYNUMBER", "ENDINGAT" },
+            Filters = new() { new("ActiveCompFilt", "$Name = ##SVCURRENTCOMPANY") },
+            IsInitialize = YesNo.Yes,
+        };
+        return GetObjectsXML<BaseCompany>(paginatedRequestOptions);
+
+    }
+
     public string PostObjectToTallyXML<ObjType>(ObjType Object,
                                                 PostRequestOptions? postRequestOptions = null) where ObjType : TallyXmlJson, ITallyObject
     {
@@ -45,31 +58,7 @@ public class TallyHelperService : TallyService
 
     }
 
-    public string GetObjectsXML<ObjType>(string lookupValue,
-                                         VoucherRequestOptions? requestOptions = null) where ObjType : Voucher
-    {
-        // If received FetchList in collectionOptions we will use that else use default fetchlist
-        requestOptions ??= new();
-        requestOptions.FetchList ??=
-                new List<string>()
-                {
-                    "MasterId", "*",
-                };
-        string filterformulae;
-        if (requestOptions.LookupField is VoucherLookupField.MasterId or VoucherLookupField.AlterId)
-        {
-            filterformulae = $"${requestOptions.LookupField} = {lookupValue}";
-        }
-        else
-        {
-            filterformulae = $"${requestOptions.LookupField} = \"{lookupValue}\"";
-        }
-        List<Filter> filters = new() { new Filter() { FilterName = "Objfilter", FilterFormulae = filterformulae } };
-
-        PaginatedRequestOptions paginatedRequestOptions = new() { FetchList = requestOptions.FetchList, Filters = filters, Objects = requestOptions.Objects };
-
-        return GetObjectsXML<ObjType>(paginatedRequestOptions);
-    }
+    
 
 
     public string GetObjectsXML<ObjType>(PaginatedRequestOptions? objectOptions = null) where ObjType : TallyBaseObject
@@ -98,24 +87,12 @@ public class TallyHelperService : TallyService
         collectionOptions.Objects ??= new();
         if (mapping != null)
         {
-            if (mapping.ComputeFields != null)
-            {
-                collectionOptions.Compute.AddRange(mapping.ComputeFields);
-            }
+            
             if (mapping.Filters != null)
             {
                 collectionOptions.Filters.AddRange(mapping.Filters);
             }
-            if (mapping.Objects != null)
-            {
-                mapping.Objects.ForEach(obj =>
-                {
-                    if (!collectionOptions.Objects.Contains(obj))
-                    {
-                        collectionOptions.Objects.Add(obj);
-                    }
-                });
-            }
+            
         }
         //Adding xmlelement name according to RootElement name of ReturnObject
         collectionOptions.XMLAttributeOverrides ??= new();
@@ -125,7 +102,7 @@ public class TallyHelperService : TallyService
 
 
 
-        return GenerateCollectionXML(collectionOptions);
+        return GenerateCollectionXML(collectionOptions,true);
 
     }
 
@@ -144,7 +121,7 @@ public class TallyHelperService : TallyService
 
         RequestEnvelope requestEnvelope = new(report, sv);
 
-        return requestEnvelope.GetXML();
+        return requestEnvelope.GetXML(indent:true);
     }
 
 }
