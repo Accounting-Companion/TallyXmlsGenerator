@@ -3,6 +3,7 @@ using TallyXmlsGenerator.Models;
 using TallyConnector.Core.Models;
 using System.Reflection;
 using System.Text;
+using TallyConnector.Core.Models.Masters;
 
 namespace TallyXmlsGenerator.Services;
 public class XmlGenerator
@@ -30,7 +31,8 @@ public class XmlGenerator
                                                   "Communicate with Tally Prime/ERP 9\n\nIf you want to suggest any changes " +
                                                   "or found any issues contact me\n\nIf you want " +
                                                   "complete integration support contact me at [contact@saivineeth.com]" +
-                                                  "(mailto:contact@saivineeth.com)",
+                                                  "(mailto:contact@saivineeth.com) \n\n" +
+                                                  "or you can purchase from [Upwork](https://www.upwork.com/services/product/development-it-a-fantastic-app-that-integrates-tally-tally-prime-with-any-application-1376166703485251584?ref=project_share&tier=1)",
                                                   "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
                                                   "13855108");
 
@@ -40,15 +42,16 @@ public class XmlGenerator
             new("TallyURL", "http://localhost")
         };
 
-        postManCollection.Item = new();
+        postManCollection.Item = new()
+        {
+            GetCollectionItem(),
+            GetReportsItem(),
 
-        postManCollection.Item.Add(GetCollectionItem());
-        postManCollection.Item.Add(GetReportsItem());
-
-        //Adds Test Request
-        postManCollection.Item.Add(new("Test", "", ""));
-        //Adds  Request to get Current Company
-        postManCollection.Item.Add(new("GetActiveCompany", PrefixGeneratedByText(tallyHelperService.GetActiveCompanyXml()), ""));
+            //Adds Test Request
+            new("Test", "", ""),
+            //Adds  Request to get Current Company
+            new("GetActiveCompany", PrefixGeneratedByText(tallyHelperService.GetActiveCompanyXml()), "")
+        };
         var json = JsonSerializer.Serialize(new CollectionRoot(postManCollection), new JsonSerializerOptions() { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull });
         return json;
     }
@@ -203,4 +206,8 @@ public class XmlGenerator
         return FY;
     }
 
+    public string GetLedgersXml()
+    {
+        return tallyHelperService.PostObjectToTallyXML<Ledger>(new("Test Ledger Name", "Sundry Debtors"));
+    }
 }
