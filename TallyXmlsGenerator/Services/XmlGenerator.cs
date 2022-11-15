@@ -24,11 +24,11 @@ public class XmlGenerator
     public string GeneratePostManCollectionJson()
     {
         PostManCollection postManCollection = new("13855108-70cf4ea5-b8c6-4c9c-8c9b-5cce9061b2fd",
-                                                  "TallyXML_NEW",
-                                                  "When Developing [Tally Connector Library](https://github.com/Accounting-Companion/TallyConnector) , I did some research to get" +
+                                                  "Tally XMLS for Integration with Third party Apps",
+                                                  "When Developing  [Tally Connector Library](https://github.com/Accounting-Companion/TallyConnector) , I did some research to get" +
                                                   " data from Tally in easier way using XML API and " +
                                                   "found these xmls useful\n\nFollowing are the Xml Requests To " +
-                                                  "Communicate with Tally Prime/ERP 9\n\nIf you want to suggest any changes " +
+                                                  "Communicate with Tally Prime/ Tally ERP 9\n\nIf you want to suggest any changes " +
                                                   "or found any issues contact me\n\nIf you want " +
                                                   "complete integration support contact me at [contact@saivineeth.com]" +
                                                   "(mailto:contact@saivineeth.com) \n\n" +
@@ -44,9 +44,8 @@ public class XmlGenerator
 
         postManCollection.Item = new()
         {
-            GetCollectionItem(),
-            GetReportsItem(),
-
+            GetExportCollection(),
+            GetImportCollection(),
             //Adds Test Request
             new("Test", "", ""),
             //Adds  Request to get Current Company
@@ -54,6 +53,126 @@ public class XmlGenerator
         };
         var json = JsonSerializer.Serialize(new CollectionRoot(postManCollection), new JsonSerializerOptions() { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull });
         return json;
+    }
+
+    private Item GetExportCollection()
+    {
+        return new("Export")
+        {
+            ChildItems = new()
+            {
+                new("Create"){ChildItems=new(){GetCollectionItem(),GetReportsItem()},Id="7ff8a57d-d4f6-46e0-aa75-0ef50ef4a8be"},
+
+            },
+            Id = "51e6fcfd-d260-4ba9-ab28-16df9f2a78bc",
+            Description = "XMLS to Export data from Tally"
+        };
+    }
+
+    private Item GetMastersCollection()
+    {
+        Item item = new("Masters");
+        item.ChildItems = new()
+        {
+            GetLedgerCollectionItem()
+        };
+        return item;
+    }
+
+    private Item GetLedgerCollectionItem()
+    {
+        Item item = new("Ledger")
+        {
+            ChildItems = new()
+        };
+        item.ChildItems.Add(new("BasicLedger", PrefixGeneratedByText(tallyHelperService.PostObjectToTallyXML<Ledger>(new("Test Ledger", "Sundry Debtors"))), ""));
+        item.ChildItems.Add(new("LedgerwithOpeningBalance", PrefixGeneratedByText(tallyHelperService.PostObjectToTallyXML<Ledger>(new("Test Ledger 2", "Sundry Debtors")
+        {
+            OpeningBal = 8000
+        })), ""));
+        return item;
+    }
+    private Item GetVoucherCollectionItem()
+    {
+        Item item = new("Voucher")
+        {
+            ChildItems = new()
+        };
+        Voucher basicVoucher = CreateBasicVoucher();
+        Voucher basicInvoiceVoucher = CreateBasicInvoiceVoucher();
+        Voucher VoucherwithCostCenter = CreateVoucherwithCostCenter();
+        Voucher InvoiceVoucherwithCostCenter = CreateInvoiceVoucherwithCostCenter();
+
+        item.ChildItems.Add(new(nameof(basicVoucher),
+                                PrefixGeneratedByText(tallyHelperService.PostVoucherToTallyXML(basicVoucher)),
+                                ""));
+
+        item.ChildItems.Add(new(nameof(basicInvoiceVoucher),
+                                PrefixGeneratedByText(tallyHelperService.PostVoucherToTallyXML(basicInvoiceVoucher)),
+                                ""));
+
+        item.ChildItems.Add(new(nameof(VoucherwithCostCenter),
+                                PrefixGeneratedByText(tallyHelperService.PostVoucherToTallyXML(VoucherwithCostCenter)),
+                                ""));
+        item.ChildItems.Add(new(nameof(InvoiceVoucherwithCostCenter),
+                                PrefixGeneratedByText(tallyHelperService.PostVoucherToTallyXML(InvoiceVoucherwithCostCenter)),
+                                ""));
+        return item;
+    }
+
+    private static Voucher CreateBasicVoucher()
+    {
+        return new()
+        {
+            VoucherType = "Sales",
+            Date = DateTime.Now,
+            Action = TallyConnector.Core.Models.Action.Create,
+            View = VoucherViewType.AccountingVoucherView,
+            Narration = "Being Sales made to Test Customer",
+            Ledgers = new()
+            {
+                new("Test Customer",-9000),
+                new("Sales",9000)
+            }
+        };
+    }
+    private static Voucher CreateBasicInvoiceVoucher()
+    {
+        Voucher voucher = CreateBasicVoucher();
+        voucher.PartyName = voucher.Ledgers?.First().LedgerName;
+        voucher.View = VoucherViewType.InvoiceVoucherView;
+        return voucher;
+    }
+    private static Voucher CreateVoucherwithCostCenter()
+    {
+        Voucher voucher = CreateBasicVoucher();
+        VoucherLedger ledger = voucher.Ledgers!.Last();
+        ledger.CostCategoryAllocations = new()
+        {
+            new("Primary Cost Category",new(){new("Costcent1",9000)})
+        };
+
+        return voucher;
+    }
+    private static Voucher CreateInvoiceVoucherwithCostCenter()
+    {
+        Voucher voucher = CreateVoucherwithCostCenter();
+        voucher.PartyName = voucher.Ledgers?.First().LedgerName;
+        voucher.View = VoucherViewType.InvoiceVoucherView;
+        return voucher;
+    }
+
+    private Item GetImportCollection()
+    {
+        return new("Import")
+        {
+            ChildItems = new()
+            {
+                GetMastersCollection(),
+                GetVoucherCollectionItem()
+            },
+            Description = "XMLS to Import data To Tally"
+        };
     }
 
     private Item GetReportsItem()

@@ -32,7 +32,28 @@ public class TallyHelperService : TallyService
                                                {
                                                    SVCompany = postRequestOptions?.Company ?? Company?.Name
                                                });
-        return Objectenvelope.GetXML(postRequestOptions?.XMLAttributeOverrides);
+        return Objectenvelope.GetXML(postRequestOptions?.XMLAttributeOverrides, true);
+    }
+    public string PostVoucherToTallyXML<ObjType>(ObjType Object,
+                                                PostRequestOptions? postRequestOptions = null) where ObjType : Voucher
+    {
+        Object.PrepareForExport();
+        postRequestOptions ??= new();
+        postRequestOptions.XMLAttributeOverrides ??= new();
+
+        if (Object.View != VoucherViewType.AccountingVoucherView)
+        {
+            XmlAttributes xmlattribute = new();
+            xmlattribute.XmlElements.Add(new("LEDGERENTRIES.LIST"));
+            postRequestOptions.XMLAttributeOverrides.Add(typeof(Voucher), "Ledgers", xmlattribute);
+        }
+
+        Envelope<ObjType> Objectenvelope = new(Object,
+                                               new()
+                                               {
+                                                   SVCompany = postRequestOptions?.Company ?? Company?.Name
+                                               });
+        return  Objectenvelope.GetXML(postRequestOptions?.XMLAttributeOverrides, true);
     }
     public string GetObjectXML<ObjType>(string lookupValue,
                                         MasterRequestOptions? requestOptions = null) where ObjType : TallyBaseObject, INamedTallyObject
@@ -58,7 +79,7 @@ public class TallyHelperService : TallyService
 
     }
 
-    
+
 
 
     public string GetObjectsXML<ObjType>(PaginatedRequestOptions? objectOptions = null) where ObjType : TallyBaseObject
@@ -87,12 +108,12 @@ public class TallyHelperService : TallyService
         collectionOptions.Objects ??= new();
         if (mapping != null)
         {
-            
+
             if (mapping.Filters != null)
             {
                 collectionOptions.Filters.AddRange(mapping.Filters);
             }
-            
+
         }
         //Adding xmlelement name according to RootElement name of ReturnObject
         collectionOptions.XMLAttributeOverrides ??= new();
@@ -102,7 +123,7 @@ public class TallyHelperService : TallyService
 
 
 
-        return GenerateCollectionXML(collectionOptions,true);
+        return GenerateCollectionXML(collectionOptions, true);
 
     }
 
@@ -121,7 +142,7 @@ public class TallyHelperService : TallyService
 
         RequestEnvelope requestEnvelope = new(report, sv);
 
-        return requestEnvelope.GetXML(indent:true);
+        return requestEnvelope.GetXML(indent: true);
     }
 
 }

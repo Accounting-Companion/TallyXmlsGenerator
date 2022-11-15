@@ -107,6 +107,9 @@ public class Item
     [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
     [JsonPropertyName("item")]
     public List<Item> ChildItems { get; set; }
 
